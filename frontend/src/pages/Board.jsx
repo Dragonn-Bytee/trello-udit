@@ -288,7 +288,7 @@ export default function Board() {
       )}
       <Navbar onCreateBoard={() => setShowCreate(true)} />
 
-      <div className="board-main-content" style={{ display: 'flex', flex: 1 }}>
+      <div className="board-main-content" style={{ display: 'flex', flex: 1, position: 'relative', zIndex: 1 }}>
         {showInbox && (
           <div className="side-panel">
             <div className="side-panel-header">
