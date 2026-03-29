@@ -47,6 +47,7 @@ export default function Board() {
   const [showVisibilityPop, setShowVisibilityPop] = useState(false);
   const [visibilityPos, setVisibilityPos] = useState({ x: 0, y: 0 });
   const [showBackgroundPop, setShowBackgroundPop] = useState(false);
+  const [backgroundPos, setBackgroundPos] = useState({ x: 0, y: 0 });
   const [showCreate, setShowCreate] = useState(false);
   
   const visibilityRef = useRef(null);
@@ -326,22 +327,16 @@ export default function Board() {
               <div className="board-badge"><FiLayout /> Board</div>
             </div>
             <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ position: 'relative' }} ref={backgroundBtnRef}>
-                <div className="board-badge" onClick={() => setShowBackgroundPop(!showBackgroundPop)}>
-                  <FiGrid /> Background
-                </div>
-                {showBackgroundPop && (
-                  <div className="visibility-popover bg-popover">
-                    <div style={{ textAlign: 'center', padding: '8px 0', borderBottom: '1px solid #444', marginBottom: 12, fontWeight: 600 }}>Change Background</div>
-                    <div className="bg-grid">
-                      {backgrounds.map((bg, idx) => (
-                        <div key={idx} className={`bg-option ${(bg.image === board.background_image || bg.color === board.background_color) ? 'active' : ''}`} style={{ backgroundImage: bg.image ? `url(${bg.image})` : 'none', backgroundColor: bg.color || '#333' }} onClick={() => handleBackgroundChange(bg)}>
-                          <span>{bg.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div 
+                className="board-badge" 
+                ref={backgroundBtnRef}
+                onClick={() => {
+                  const rect = backgroundBtnRef.current.getBoundingClientRect();
+                  setBackgroundPos({ x: rect.left, y: rect.bottom + 12 });
+                  setShowBackgroundPop(!showBackgroundPop);
+                }}
+              >
+                <FiGrid /> Background
               </div>
               <button className="navbar-btn"><BsLightningCharge /></button>
               <div style={{ position: 'relative' }}>
@@ -427,8 +422,32 @@ export default function Board() {
           </div>
         </div>
       )}
+
+      {showBackgroundPop && (
+        <div 
+          className="visibility-popover bg-popover" 
+          onClick={e => e.stopPropagation()}
+          style={{ 
+            position: 'fixed', 
+            top: backgroundPos.y, 
+            left: backgroundPos.x,
+            margin: 0,
+            zIndex: 99999
+          }}
+        >
+          <div style={{ textAlign: 'center', padding: '8px 0', borderBottom: '1px solid #444', marginBottom: 12, fontWeight: 600 }}>Change Background</div>
+          <div className="bg-grid">
+            {backgrounds.map((bg, idx) => (
+              <div key={idx} className={`bg-option ${(bg.image === board.background_image || bg.color === board.background_color) ? 'active' : ''}`} style={{ backgroundImage: bg.image ? `url(${bg.image})` : 'none', backgroundColor: bg.color || '#333' }} onClick={() => handleBackgroundChange(bg)}>
+                <span>{bg.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       {activeCardId && (
+
         <CardDetailModal cardId={activeCardId} boardLabels={board.labels || []} boardMembers={allMembers} isReadOnly={isReadOnly} onClose={() => { setActiveCardId(null); setSearchParams({}); }} onUpdate={fetchBoard} />
       )}
       {showToast && (
