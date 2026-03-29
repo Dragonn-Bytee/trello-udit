@@ -5,6 +5,9 @@ const path = require('path');
 // Create a connection pool using DATABASE_URL from .env
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 // Helper: run a query (returns { rows, rowCount })
