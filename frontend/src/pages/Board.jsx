@@ -383,7 +383,45 @@ export default function Board() {
                   {board.lists.map((list, index) => {
                     const filteredCards = list.cards.filter(c => !filterText || c.title.toLowerCase().includes(filterText.toLowerCase()));
                     return (
-                      <List key={list.id} list={{ ...list, cards: filteredCards }} index={index} isReadOnly={isReadOnly} onOpenCard={(id) => { setActiveCardId(id); setSearchParams({ card: id }); }} onUpdateList={async (id, data) => { await updateList(id, data); fetchBoard(); }} onDeleteList={async (id) => { await deleteList(id); fetchBoard(); }} />
+                      <List 
+                        key={list.id} 
+                        list={{ ...list, cards: filteredCards }} 
+                        index={index} 
+                        isReadOnly={isReadOnly} 
+                        onOpenCard={(id) => { setActiveCardId(id); setSearchParams({ card: id }); }} 
+                        onUpdateList={async (id, data) => { await updateList(id, data); fetchBoard(); }} 
+                        onDeleteList={async (id) => { await deleteList(id); fetchBoard(); }} 
+                        onAddCard={async (listId, title) => {
+                          const tempCard = {
+                            id: `temp-${Date.now()}`,
+                            list_id: listId,
+                            title: title,
+                            position: (list.cards.length + 1) * 1000,
+                            labels: [],
+                            members: [],
+                            checklist_total: 0,
+                            checklist_done: 0,
+                            comment_count: 0,
+                            attachment_count: 0
+                          };
+                          setBoard(prev => {
+                            const newLists = prev.lists.map(l => {
+                              if (l.id === listId) {
+                                return { ...l, cards: [...l.cards, tempCard] };
+                              }
+                              return l;
+                            });
+                            return { ...prev, lists: newLists };
+                          });
+                          try {
+                            await createCard({ list_id: listId, title });
+                            fetchBoard();
+                          } catch (e) {
+                            console.error(e);
+                            fetchBoard();
+                          }
+                        }}
+                      />
                     );
                   })}
                   {provided.placeholder}

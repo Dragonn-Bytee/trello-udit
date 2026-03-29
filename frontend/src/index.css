@@ -640,6 +640,8 @@ body {
   font-size: 14px;
   color: var(--text-dark-primary);
   margin-bottom: 8px;
+  word-break: break-word;
+  white-space: pre-wrap;
   line-height: 1.4;
 }
 
@@ -1470,4 +1472,118 @@ body {
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+}
+
+/* ============================================
+   RESPONSIVE (Mobile & Tablet & PC)
+   ============================================ */
+
+/* Tablet Optimization */
+@media (max-width: 1024px) {
+  .board-header { padding: 4px 12px; height: auto; min-height: 56px; }
+  .board-title { font-size: 16px; }
+  .navbar-search { max-width: 200px; }
+}
+
+/* Mobile & Small Tablet Optimization */
+@media (max-width: 768px) {
+  /* Layout & Nav */
+  .navbar { padding: 0 8px; }
+  .navbar-search { display: none; } /* Hide search box on small screens */
+  .navbar-brand { font-size: 16px; padding: 0 4px; }
+  .navbar-btn { padding: 4px 8px; font-size: 12px; }
+  .navbar-trial-badge { display: none; }
+  
+  .main-wrapper { padding-top: 48px; overflow-x: hidden; }
+  
+  /* Board Header wrapped on mobile */
+  .board-header { 
+    display: flex; 
+    flex-wrap: wrap; 
+    padding: 8px; 
+    gap: 8px; 
+    justify-content: flex-start; 
+    height: auto;
+  }
+  .header-left, .header-right { flex-wrap: wrap; gap: 8px; }
+  .board-badge { padding: 6px 10px; font-size: 12px; }
+  
+  /* Card List smooth scrolling & snapping */
+  .board-content { 
+    padding: 8px; 
+    padding-bottom: 90px;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 8px;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .list-wrapper { 
+    width: 280px;
+    scroll-snap-align: start; 
+    margin-right: 12px;
+  }
+  
+  /* Side Panels Overlay Instead of Resize */
+  .side-panel {
+    position: fixed;
+    top: 48px;
+    bottom: 0px;
+    left: 0;
+    width: 100%;
+    max-width: 100vw;
+    z-index: 10005;
+    background: rgba(16, 18, 4, 0.95);
+    backdrop-filter: blur(12px);
+  }
+  
+  /* Modals take full screen on mobile */
+  .modal-overlay { padding: 0; }
+  .premium-modal {
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+  
+  /* Bottom Navigation Layout */
+  .bottom-nav {
+    width: 90%;
+    bottom: 16px;
+    justify-content: space-around;
+  }
+  .bottom-nav-item {
+    font-size: 11px;
+    padding: 6px 8px;
+    flex-direction: column;
+    gap: 4px;
+    width: 25%;
+    text-align: center;
+  }
+  .bottom-nav-item svg { font-size: 20px; }
+  .bottom-nav-divider { display: none; }
+  
+  /* Trello Home Grid */
+  .boards-grid { justify-content: space-between; gap: 12px; }
+  .board-tile { width: calc(50% - 6px); padding: 8px; height: 84px; }
+  
+  /* Popovers */
+  .visibility-popover {
+    width: calc(100vw - 32px);
+    max-width: 320px;
+    left: 16px !important; 
+    transform: none !important;
+  }
+}
+
+/* Tiny Mobile Screens */
+@media (max-width: 480px) {
+  .board-title { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .board-badge span { display: none; } /* Hide text in badges */
+  .boards-grid { display: flex; flex-direction: column; }
+  .board-tile { width: 100%; height: 72px; }
+  .list-wrapper { width: 260px; }
 }

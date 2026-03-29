@@ -6,7 +6,7 @@ import Card from './Card';
 import { createCard } from '../api';
 
 export default function List({
-  list, index, onOpenCard, onUpdateList, onDeleteList, isReadOnly
+  list, index, onOpenCard, onUpdateList, onDeleteList, onAddCard, isReadOnly
 }) {
   const [showAddCard, setShowAddCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
@@ -18,12 +18,18 @@ export default function List({
 
   const handleAddCard = async () => {
     if (!newCardTitle.trim()) return;
-    try {
-      await createCard({ list_id: list.id, title: newCardTitle.trim() });
-      setNewCardTitle('');
-      window.location.reload(); // Quick refresh for demo
-    } catch (e) {
-      console.error(e);
+    const title = newCardTitle.trim();
+    setNewCardTitle('');
+    
+    if (onAddCard) {
+      await onAddCard(list.id, title);
+    } else {
+      try {
+        await createCard({ list_id: list.id, title });
+        window.location.reload(); // Fallback if no onAddCard provided
+      } catch (e) {
+        console.error(e);
+      }
     }
   };
 
