@@ -51,7 +51,9 @@ export default function Board() {
   const [showCreate, setShowCreate] = useState(false);
   
   const visibilityRef = useRef(null);
+  const visibilityPopRef = useRef(null);
   const backgroundBtnRef = useRef(null);
+  const backgroundPopRef = useRef(null);
   const filterBtnRef = useRef(null);
   const filterPopRef = useRef(null);
 
@@ -98,9 +100,9 @@ export default function Board() {
 
   const backgrounds = [
     { name: 'Trello Purple', image: '/backgrounds/purple.png' },
-    { name: 'Deep Space', image: '/backgrounds/abstract.png' },
-    { name: 'Twilight Peak', image: '/backgrounds/mountain.png' },
-    { name: 'Zen Workspace', image: '/backgrounds/workspace.png' },
+    { name: 'Deep Space', gradient: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' },
+    { name: 'Twilight Peak', gradient: 'linear-gradient(135deg, #4b6cb7, #182848)' },
+    { name: 'Zen Workspace', gradient: 'linear-gradient(135deg, #1e3c72, #2a5298)' },
     { name: 'Solid Blue', color: '#0079BF' },
     { name: 'Solid Purple', color: '#89609E' },
     { name: 'Solid Dark', color: '#101204' },
@@ -108,16 +110,22 @@ export default function Board() {
 
   const handleBackgroundChange = async (bg) => {
     console.log('Changing background to:', bg);
+    const updateData = {
+      background_image: bg.gradient || bg.image || null,
+      background_color: bg.color || null
+    };
+
+    // Optimistic UI update
+    setBoard(prev => ({ ...prev, ...updateData }));
+    setShowBackgroundPop(false);
+
     try {
-      const updateData = bg.image 
-        ? { background_image: bg.image, background_color: null }
-        : { background_color: bg.color, background_image: null };
-      
       console.log('Sending update to API:', updateData);
       await updateBoard(id, updateData);
-      setBoard(prev => ({ ...prev, ...updateData }));
     } catch (err) {
       console.error('Failed to update background:', err);
+      // Revert on failure
+      fetchBoard();
     }
   };
 
@@ -151,13 +159,13 @@ export default function Board() {
     }
 
     function handleClickOutside(e) {
-      if (visibilityRef.current && !visibilityRef.current.contains(e.target)) {
+      if (visibilityPopRef.current && !visibilityPopRef.current.contains(e.target) && visibilityRef.current && !visibilityRef.current.contains(e.target)) {
         setShowVisibilityPop(false);
       }
-      if (filterPopRef.current && !filterPopRef.current.contains(e.target) && !filterBtnRef.current.contains(e.target)) {
+      if (filterPopRef.current && !filterPopRef.current.contains(e.target) && filterBtnRef.current && !filterBtnRef.current.contains(e.target)) {
         setShowFilterPop(false);
       }
-      if (backgroundBtnRef.current && !backgroundBtnRef.current.contains(e.target)) {
+      if (backgroundPopRef.current && !backgroundPopRef.current.contains(e.target) && backgroundBtnRef.current && !backgroundBtnRef.current.contains(e.target)) {
         setShowBackgroundPop(false);
       }
     }
@@ -260,12 +268,18 @@ export default function Board() {
   return (
     <div className="main-wrapper" style={{ 
       backgroundColor: board.background_color || '#101204',
-      backgroundImage: board.background_image ? `url(${board.background_image})` : 'none',
+      backgroundImage: board.background_image 
+        ? (String(board.background_image).includes('gradient') ? board.background_image : `url(${board.background_image})`) 
+        : 'none',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
       display: 'flex',
       flexDirection: 'column',
       height: '100vh',
       minHeight: '100vh',
-      transition: 'background 0.5s ease'
+      transition: 'background-color 0.4s ease, background-image 0.4s ease'
     }}>
       {!user && board.visibility === 'public' && (
         <div className="guest-banner">
@@ -401,7 +415,8 @@ export default function Board() {
 
       {!isReadOnly && showVisibilityPop && (
         <div 
-          className="visibility-popover" 
+          className="visibility-popover"
+          ref={visibilityPopRef}
           onClick={e => e.stopPropagation()}
           style={{ 
             position: 'fixed', 
@@ -430,6 +445,7 @@ export default function Board() {
       {showBackgroundPop && (
         <div 
           className="visibility-popover bg-popover" 
+          ref={backgroundPopRef}
           onClick={e => e.stopPropagation()}
           style={{ 
             position: 'fixed', 
@@ -442,7 +458,14 @@ export default function Board() {
           <div style={{ textAlign: 'center', padding: '8px 0', borderBottom: '1px solid #444', marginBottom: 12, fontWeight: 600 }}>Change Background</div>
           <div className="bg-grid">
             {backgrounds.map((bg, idx) => (
-              <div key={idx} className={`bg-option ${(bg.image === board.background_image || bg.color === board.background_color) ? 'active' : ''}`} style={{ backgroundImage: bg.image ? `url(${bg.image})` : 'none', backgroundColor: bg.color || '#333' }} onClick={() => handleBackgroundChange(bg)}>
+              <div 
+                key={idx} 
+                className={`bg-option ${(bg.image === board.background_image || bg.color === board.background_color || bg.gradient === board.background_image) ? 'active' : ''}`} 
+                style={{ 
+                  background: bg.gradient || (bg.image ? `url(${bg.image}) center/cover` : (bg.color || '#333')) 
+                }} 
+                onClick={() => handleBackgroundChange(bg)}
+              >
                 <span>{bg.name}</span>
               </div>
             ))}

@@ -53,7 +53,12 @@ export default function Home() {
                   to={`/board/${board.id}`}
                   key={board.id}
                   className="board-tile"
-                  style={{ background: board.background_color, backgroundImage: board.background_image ? `url(${board.background_image})` : 'none' }}
+                  style={{ 
+                    backgroundColor: board.background_color, 
+                    backgroundImage: board.background_image 
+                      ? (String(board.background_image).includes('gradient') ? board.background_image : `url(${board.background_image})`) 
+                      : 'none' 
+                  }}
                 >
                   <div className="board-tile-overlay" />
                   <span className="board-tile-title">{board.title}</span>
@@ -78,7 +83,12 @@ export default function Home() {
                 to={`/board/${board.id}`}
                 key={board.id}
                 className="board-tile"
-                style={{ background: board.background_color, backgroundImage: board.background_image ? `url(${board.background_image})` : 'none' }}
+                style={{ 
+                  backgroundColor: board.background_color, 
+                  backgroundImage: board.background_image 
+                    ? (String(board.background_image).includes('gradient') ? board.background_image : `url(${board.background_image})`) 
+                    : 'none' 
+                }}
               >
                 <div className="board-tile-overlay" />
                 <span className="board-tile-title">{board.title}</span>
