@@ -1,0 +1,17 @@
+# Root ignore
+node_modules/
+.env
+.env.local
+.env.production
+.DS_Store
+
+# Backend
+backend/node_modules/
+backend/.env
+backend/uploads/
+backend/db/trello.db*
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
