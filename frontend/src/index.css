@@ -33,12 +33,7 @@ body {
   background-position: center;
   transition: background 0.5s ease;
 }
-
 .navbar {
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: background 0.4s ease;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -49,7 +44,19 @@ body {
   height: 48px;
 }
 
-.navbar:hover {
+.navbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: -1;
+  pointer-events: none;
+  transition: background 0.4s ease;
+}
+
+.navbar:hover::before {
   background: rgba(0, 0, 0, 0.3);
 }
 
@@ -370,17 +377,10 @@ body {
 }
 
 .search-results-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  width: 100%;
-  min-width: 320px;
-  max-width: 100vw;
   background: var(--bg-dark-panel);
   border: 1px solid var(--glass-border);
   border-radius: 8px;
   box-shadow: 0 12px 24px rgba(0,0,0,0.6);
-  z-index: 10015;
   max-height: 400px;
   overflow-x: hidden;
   overflow-y: auto;

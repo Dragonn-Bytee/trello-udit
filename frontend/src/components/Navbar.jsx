@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiSearch, FiPlus, FiBell, FiHelpCircle, FiChevronDown, FiGrid, FiLogOut, FiUser } from 'react-icons/fi';
+import { FiSearch, FiBell, FiHelpCircle, FiChevronDown, FiGrid, FiLogOut, FiUser } from 'react-icons/fi';
 import { BsTrello } from 'react-icons/bs';
 import { searchCards } from '../api';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +12,7 @@ export default function Navbar({ onCreateBoard }) {
   const [loading, setLoading] = useState(false);
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 320 });
   const searchRef = useRef(null);
   const userMenuRef = useRef(null);
   const navigate = useNavigate();
@@ -36,16 +38,34 @@ export default function Navbar({ onCreateBoard }) {
     return () => clearTimeout(timer);
   }, [searchTerm, doSearch]);
 
-  // Handle outside clicks for user menu
+  // Recalculate position on every render when search is active
+  useEffect(() => {
+    if (searchTerm && searchRef.current) {
+      const rect = searchRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: Math.max(rect.width, 320),
+      });
+    }
+  }, [searchTerm, results]);
+
+  // Handle outside clicks for user menu and search
   useEffect(() => {
     function handleClickOutside(e) {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
         setShowUserMenu(false);
       }
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchTerm('');
+        setResults([]);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const showDropdown = searchTerm && (results.length > 0 || !loading);
 
   return (
     <nav className="navbar">
@@ -71,29 +91,40 @@ export default function Navbar({ onCreateBoard }) {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        {searchTerm && results.length > 0 && (
-          <div className="search-results-dropdown">
-            {results.map(card => (
-              <div 
-                key={card.id} 
-                className="search-result-item"
-                onClick={() => {
-                  setSearchTerm('');
-                  navigate(`/board/${card.board_id}?card=${card.id}`);
-                }}
-              >
-                <div style={{fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{card.title}</div>
-                <div style={{fontSize: 12, color: '#8C9BAB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>in {card.list_title} • {card.board_title}</div>
-              </div>
-            ))}
-          </div>
-        )}
-        {searchTerm && results.length === 0 && !loading && (
-          <div className="search-results-dropdown">
-            <div style={{padding: 12, color: '#8C9BAB', textAlign: 'center'}}>No cards found</div>
-          </div>
-        )}
       </div>
+
+      {/* PORTAL: Rendered directly into document.body to escape all stacking contexts */}
+      {showDropdown && createPortal(
+        <div
+          className="search-results-dropdown"
+          style={{
+            position: 'fixed',
+            top: dropdownPos.top,
+            left: dropdownPos.left,
+            width: dropdownPos.width,
+            zIndex: 999999,
+          }}
+        >
+          {results.length > 0 ? results.map(card => (
+            <div 
+              key={card.id} 
+              className="search-result-item"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                setSearchTerm('');
+                setResults([]);
+                navigate(`/board/${card.board_id}?card=${card.id}`);
+              }}
+            >
+              <div style={{fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{card.title}</div>
+              <div style={{fontSize: 12, color: '#8C9BAB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>in {card.list_title} • {card.board_title}</div>
+            </div>
+          )) : (
+            <div style={{padding: 12, color: '#8C9BAB', textAlign: 'center'}}>No cards found</div>
+          )}
+        </div>,
+        document.body
+      )}
 
       <div className="navbar-right">
         <button className="navbar-btn" style={{fontSize: 20}}><FiBell /></button>
