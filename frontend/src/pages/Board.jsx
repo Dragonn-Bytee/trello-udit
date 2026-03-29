@@ -286,7 +286,7 @@ export default function Board() {
           👋 You are viewing this board as a guest. <Link to="/login" style={{color: '#fff', textDecoration: 'underline'}}>Log in</Link> to edit.
         </div>
       )}
-      <Navbar onCreateBoard={() => setShowCreate(true)} />
+      <Navbar onCreateBoard={() => setShowCreate(true)} filterText={filterText} onFilterChange={setFilterText} />
 
       <div className="board-main-content" style={{ display: 'flex', flex: 1, position: 'relative', zIndex: 1 }}>
         {showInbox && (
@@ -388,6 +388,8 @@ export default function Board() {
                         list={{ ...list, cards: filteredCards }} 
                         index={index} 
                         isReadOnly={isReadOnly} 
+                        filterText={filterText}
+                        hasUnfilteredCards={list.cards.length > 0}
                         onOpenCard={(id) => { setActiveCardId(id); setSearchParams({ card: id }); }} 
                         onUpdateList={async (id, data) => { await updateList(id, data); fetchBoard(); }} 
                         onDeleteList={async (id) => { await deleteList(id); fetchBoard(); }} 

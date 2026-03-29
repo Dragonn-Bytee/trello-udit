@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
-import { FiMoreHorizontal, FiPlus, FiX } from 'react-icons/fi';
+import { FiMoreHorizontal, FiPlus, FiX, FiSearch } from 'react-icons/fi';
 import Card from './Card';
 import { createCard } from '../api';
 
 export default function List({
-  list, index, onOpenCard, onUpdateList, onDeleteList, onAddCard, isReadOnly
+  list, index, onOpenCard, onUpdateList, onDeleteList, onAddCard, isReadOnly,
+  filterText = '', hasUnfilteredCards = false
 }) {
   const [showAddCard, setShowAddCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
@@ -26,7 +27,7 @@ export default function List({
     } else {
       try {
         await createCard({ list_id: list.id, title });
-        window.location.reload(); // Fallback if no onAddCard provided
+        window.location.reload();
       } catch (e) {
         console.error(e);
       }
@@ -34,6 +35,8 @@ export default function List({
   };
 
   const portal = document.getElementById('portal-root') || document.body;
+  const isFiltering = !!filterText;
+  const noMatches = isFiltering && list.cards.length === 0 && hasUnfilteredCards;
 
   return (
     <Draggable draggableId={`list-${list.id}`} index={index}>
@@ -42,7 +45,7 @@ export default function List({
           <div 
             ref={provided.innerRef} 
             {...provided.draggableProps} 
-            className="list-wrapper"
+            className={`list-wrapper ${isFiltering && list.cards.length === 0 ? 'list-filtered-empty' : ''}`}
           >
             <div className="list-container" {...provided.dragHandleProps}>
               <div className="list-header">
@@ -53,7 +56,14 @@ export default function List({
                 >
                   {list.title}
                 </div>
-                {!isReadOnly && <FiMoreHorizontal cursor="pointer" onClick={() => onDeleteList(list.id)} />}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {isFiltering && (
+                    <span className="list-match-count">
+                      {list.cards.length} match{list.cards.length !== 1 ? 'es' : ''}
+                    </span>
+                  )}
+                  {!isReadOnly && <FiMoreHorizontal cursor="pointer" onClick={() => onDeleteList(list.id)} />}
+                </div>
               </div>
 
               <Droppable droppableId={`${list.id}`} type="card">
@@ -62,14 +72,21 @@ export default function List({
                     className="list-cards" 
                     ref={provided.innerRef} 
                     {...provided.droppableProps}
-                    style={{ minHeight: '50px' }} // Ensure empty lists are drop targets
+                    style={{ minHeight: '50px' }}
                   >
+                    {noMatches && (
+                      <div className="filter-no-match">
+                        <FiSearch style={{ opacity: 0.4, fontSize: 16 }} />
+                        <span>No matching cards</span>
+                      </div>
+                    )}
                     {list.cards.map((card, idx) => (
                       <Card 
                         key={card.id} 
                         card={card} 
                         index={idx} 
-                        onClick={() => onOpenCard(card.id)} 
+                        onClick={() => onOpenCard(card.id)}
+                        highlightText={filterText}
                       />
                     ))}
                     {provided.placeholder}

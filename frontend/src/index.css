@@ -386,6 +386,74 @@ body {
   overflow-y: auto;
 }
 
+/* Real-time Filter Styles */
+.text-highlight {
+  background: rgba(245, 205, 71, 0.3);
+  color: #F5CD47;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.search-clear-btn {
+  background: none;
+  border: none;
+  color: var(--trello-text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+  margin-right: 4px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.search-clear-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.filter-active-badge {
+  font-size: 10px;
+  background: var(--trello-blue);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-right: 8px;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.list-match-count {
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #8C9BAB;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.filter-no-match {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 12px;
+  color: #8C9BAB;
+  font-size: 13px;
+  gap: 8px;
+  text-align: center;
+}
+
+.list-filtered-empty {
+  opacity: 0.7;
+}
+
+.navbar-search.search-active {
+  border-color: var(--trello-blue);
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .search-result-item {
   padding: 12px;
   border-bottom: 1px solid var(--glass-border);

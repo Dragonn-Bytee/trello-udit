@@ -6,12 +6,27 @@ import {
 } from 'react-icons/fi';
 import { format, isPast, isBefore, addDays } from 'date-fns';
 
-export default function Card({ card, index, onClick, labelsExpanded, onToggleLabels }) {
+export default function Card({ card, index, onClick, labelsExpanded, onToggleLabels, highlightText = '' }) {
   const hasLabels = card.labels && card.labels.length > 0;
   const checklistTotal = parseInt(card.checklist_total) || 0;
   const checklistDone = parseInt(card.checklist_done) || 0;
   const commentCount = parseInt(card.comment_count) || 0;
   const attachmentCount = parseInt(card.attachment_count) || 0;
+
+  // Highlight helper
+  const highlightMatch = (text, query) => {
+    if (!query) return text;
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return (
+      <span>
+        {parts.map((part, i) => 
+          part.toLowerCase() === query.toLowerCase() 
+            ? <span key={i} className="text-highlight">{part}</span> 
+            : part
+        )}
+      </span>
+    );
+  };
 
   // Visual cues based on title for demonstration (Premium Trello Look)
   const isVideo = card.title.toLowerCase().includes('starter') || card.title.toLowerCase().includes('loom');
@@ -43,7 +58,7 @@ export default function Card({ card, index, onClick, labelsExpanded, onToggleLab
             {(card.cover_image || isVideo || isImage) && (
               <div className="card-video-thumb">
                 <img 
-                  src={card.cover_image || (isVideo ? 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=400&q=80' : 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80')} 
+                   src={card.cover_image || (isVideo ? 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=400&q=80' : 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80')} 
                   alt="card cover" 
                 />
                 {isVideo && (
@@ -75,7 +90,7 @@ export default function Card({ card, index, onClick, labelsExpanded, onToggleLab
                 </div>
               )}
 
-              <div className="card-text">{card.title}</div>
+              <div className="card-text">{highlightMatch(card.title, highlightText)}</div>
               
               <div className="card-footer">
                 {card.due_date && (
