@@ -5,90 +5,252 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
 :root {
-  /* Trello Brand Colors */
-  --trello-blue: #0079BF;
-  --trello-blue-dark: #026AA7;
-  --trello-blue-hover: #005A8E;
-  --trello-navy: #172B4D;
-  --trello-text: #172B4D;
-  --trello-text-light: #B6C2CF;
-  --trello-bg: #FAFBFC;
-  --trello-border: #DCDFE4;
-
-  /* Surfaces */
-  --surface-primary: #FFFFFF;
-  --surface-secondary: #F1F2F4;
-  --surface-hovered: #E9E9E9;
-  --surface-active: #DFE1E6;
-  --surface-overlay: rgba(0, 0, 0, 0.5);
-  --surface-premium: #5E4DB2;
-
-  /* Dark Theme Surfaces (As seen in screenshots) */
+  --trello-blue: #579DFF;
+  --trello-blue-dark: #0055CC;
   --bg-dark-black: #101204;
-  --bg-dark-grey: #17191C;
   --bg-dark-panel: #1D2125;
   --bg-dark-card: #22272B;
-  --bg-dark-card-hover: #2C333A;
-  --text-dark-primary: #B6C2CF;
-  --text-dark-secondary: #8C9BAB;
-
-  /* Label Colors */
-  --label-green: #4BCE97;
-  --label-yellow: #F5CD47;
-  --label-orange: #FEA362;
-  --label-red: #F87168;
-  --label-purple: #9F8FEF;
-  --label-blue: #579DFF;
-  --label-sky: #60C6D2;
-  --label-lime: #94C748;
-  --label-pink: #E774BB;
-  --label-black: #758195;
-
-  /* Spacing */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
-  --space-xl: 24px;
-  --space-2xl: 32px;
-
-  /* Border radius */
-  --radius-sm: 3px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-
-  /* Z-index */
-  --z-board-header: 800;
-  --z-navbar: 2000;
-  --z-dropdown: 2500;
-  --z-overlay: 3000;
-  --z-modal: 4000;
-  --z-bottom-nav: 1500;
+  --text-primary: #B6C2CF;
+  --text-secondary: #8C9BAB;
+  --glass-bg: rgba(16, 18, 4, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html, body, #root {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  font-size: 14px;
-  color: var(--text-dark-primary);
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background: var(--bg-dark-black);
+  color: var(--text-primary);
+  overflow: hidden;
 }
 
-.glass-panel {
-  background: rgba(0, 0, 0, 0.25);
+.main-wrapper {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background-size: cover;
+  background-position: center;
+  transition: background 0.5s ease;
+}
+
+.navbar {
+  height: 48px;
+  background: rgba(0,0,0,0.5);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--glass-border);
+  z-index: 10000;
 }
+
+.board-header {
+  height: 56px;
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--glass-border);
+  position: relative;
+  z-index: 10001; /* Must be higher than any card/list content */
+}
+
+.board-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #fff;
+  transition: background 0.2s;
+}
+
+.board-badge:hover { background: rgba(255,255,255,0.15); }
+
+.visibility-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 320px;
+  background: #282e33;
+  border-radius: 8px;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.6);
+  padding: 12px;
+  margin-top: 12px;
+  z-index: 9999;
+}
+
+.visibility-option {
+  padding: 12px;
+  border-radius: 6px;
+  display: flex;
+  gap: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.visibility-option:hover { background: rgba(255,255,255,0.05); }
+.visibility-option.active { background: rgba(87, 157, 255, 0.1); border: 1px solid rgba(87, 157, 255, 0.3); }
+
+.vis-icon { font-size: 20px; color: var(--text-secondary); margin-top: 2px; }
+.vis-content h4 { font-size: 14px; margin-bottom: 4px; color: #fff; }
+.vis-content p { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+
+.board-content {
+  flex: 1;
+  display: flex;
+  padding: 12px;
+  gap: 12px;
+  overflow-x: auto;
+  align-items: flex-start;
+}
+
+.list-container {
+  width: 272px;
+  flex-shrink: 0;
+  background: #101204cc;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding-bottom: 8px;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-item {
+  background: var(--bg-dark-card);
+  border-radius: 8px;
+  margin: 0 8px 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 0.1s;
+}
+
+.card-item:hover { border-color: var(--trello-blue); background: #2c333a; }
+
+.bottom-nav {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1d2125f2;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  display: flex;
+  padding: 4px;
+  gap: 4px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.bottom-nav-item {
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.bottom-nav-item.active { background: rgba(87, 157, 255, 0.15); color: var(--trello-blue); }
+
+.guest-banner {
+  background: var(--trello-blue);
+  color: #fff;
+  padding: 8px 16px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Home Page Styles */
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 16px;
+  height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.home-section {
+  margin-bottom: 40px;
+}
+
+.home-section-header {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.boards-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.board-tile {
+  width: 200px;
+  height: 96px;
+  border-radius: 8px;
+  padding: 12px;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  position: relative;
+  transition: transform 0.2s, filter 0.2s;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.board-tile:hover {
+  transform: translateY(-4px);
+  filter: brightness(1.1);
+}
+
+.board-tile-title {
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+.board-tile-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.15);
+  z-index: 1;
+}
+
+.create-board-tile {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.create-board-tile:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--trello-blue);
+  color: #fff;
+}
+
 
 /* ============================================
    Navigation Bar
@@ -1257,4 +1419,28 @@ html, body, #root {
 @keyframes slideUpFade {
   from { opacity: 0; transform: translate(-50%, 20px); }
   to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Modal Overlay & Base Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20000; /* Extremely high to be above everything */
+  padding: 40px;
+}
+
+.premium-modal {
+  background: var(--bg-dark-panel);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+  border: 1px solid rgba(255,255,255,0.1);
+  overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }

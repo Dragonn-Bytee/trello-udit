@@ -6,7 +6,7 @@ import Card from './Card';
 import { createCard } from '../api';
 
 export default function List({
-  list, index, onOpenCard, onUpdateList, onDeleteList
+  list, index, onOpenCard, onUpdateList, onDeleteList, isReadOnly
 }) {
   const [showAddCard, setShowAddCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
@@ -40,10 +40,14 @@ export default function List({
           >
             <div className="list-container" {...provided.dragHandleProps}>
               <div className="list-header">
-                <div className="list-title" contentEditable onBlur={(e) => onUpdateList(list.id, {title: e.target.innerText})}>
+                <div 
+                  className="list-title" 
+                  contentEditable={!isReadOnly} 
+                  onBlur={(e) => !isReadOnly && onUpdateList(list.id, {title: e.target.innerText})}
+                >
                   {list.title}
                 </div>
-                <FiMoreHorizontal cursor="pointer" />
+                {!isReadOnly && <FiMoreHorizontal cursor="pointer" onClick={() => onDeleteList(list.id)} />}
               </div>
 
               <Droppable droppableId={`${list.id}`} type="card">
@@ -84,7 +88,7 @@ export default function List({
                 )}
               </Droppable>
 
-              {!showAddCard && (
+              {!isReadOnly && !showAddCard && (
                 <button className="btn-add-card" onClick={() => setShowAddCard(true)}>
                   <FiPlus /> Add a card
                 </button>

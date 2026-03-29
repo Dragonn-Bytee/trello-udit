@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS boards (
     title VARCHAR(255) NOT NULL,
     background_color VARCHAR(50) DEFAULT '#0079BF',
     background_image TEXT,
+    visibility VARCHAR(20) DEFAULT 'workspace',
     is_starred BOOLEAN DEFAULT FALSE,
     created_by INTEGER REFERENCES members(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT NOW(),

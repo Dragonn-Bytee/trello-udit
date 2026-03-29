@@ -13,6 +13,8 @@ import List from '../components/List';
 import AddList from '../components/AddList';
 import CardDetailModal from '../components/CardDetailModal';
 import CreateBoardModal from '../components/CreateBoardModal';
+import ShareModal from '../components/ShareModal';
+import { useAuth } from '../contexts/AuthContext';
 import {
   getBoard, updateBoard, createList, updateList, deleteList,
   reorderLists, createCard, reorderCards, getMembers, deleteCard,
@@ -23,6 +25,7 @@ export default function Board() {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [board, setBoard] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +45,7 @@ export default function Board() {
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [showVisibilityPop, setShowVisibilityPop] = useState(false);
+  const [visibilityPos, setVisibilityPos] = useState({ x: 0, y: 0 });
   const [showBackgroundPop, setShowBackgroundPop] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   
@@ -61,6 +65,8 @@ export default function Board() {
     }
   }, [id]);
 
+  const isReadOnly = !user && board?.visibility === 'public';
+
   useEffect(() => {
     fetchBoard();
     getMembers().then(setAllMembers).catch(console.error);
@@ -71,7 +77,6 @@ export default function Board() {
     navigator.clipboard.writeText(link).then(() => {
       setToastMsg('Board link copied to clipboard! Share this with others to collaborate.');
       setShowToast(true);
-      // No longer auto-hiding after 3 seconds
     });
   };
 
@@ -113,7 +118,16 @@ export default function Board() {
     }
   };
 
-  // Handle outside clicks and dragging for popovers
+  const handleVisibilityChange = async (visibility) => {
+    try {
+      await updateBoard(id, { visibility });
+      setBoard(prev => ({ ...prev, visibility }));
+      setShowVisibilityPop(false);
+    } catch (err) {
+      console.error('Failed to update visibility:', err);
+    }
+  };
+
   useEffect(() => {
     function handleMouseMove(e) {
       if (isDragging) {
@@ -153,16 +167,6 @@ export default function Board() {
     };
   }, [isDragging, dragStart]);
 
-  const handleBoardTitleChange = async (newTitle) => {
-    if (!newTitle.trim() || newTitle === board.title) return;
-    try {
-      await updateBoard(id, { title: newTitle.trim() });
-      setBoard((prev) => ({ ...prev, title: newTitle.trim() }));
-    } catch (err) {
-      console.error('Failed to update board title:', err);
-    }
-  };
-
   const toggleStar = async () => {
     try {
       await updateBoard(id, { is_starred: !board.is_starred });
@@ -174,33 +178,15 @@ export default function Board() {
 
   const handleDragEnd = async (result) => {
     const { source, destination, type, draggableId } = result;
-    
-    // Debug log for troubleshooting snaps
-    console.log('Drag End Event:', { 
-      type, 
-      draggableId, 
-      source: { listId: source.droppableId, index: source.index },
-      destination: destination ? { listId: destination.droppableId, index: destination.index } : null 
-    });
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-    if (!destination) {
-      console.warn('Drop occurred outside a valid droppable area.');
-      return;
-    }
-
-    if (source.droppableId === destination.droppableId && source.index === destination.index) {
-      return;
-    }
-
-    // 1. Handle List Movement
     if (type === 'list') {
       const newLists = Array.from(board.lists);
       const [moved] = newLists.splice(source.index, 1);
       newLists.splice(destination.index, 0, moved);
-      
       const updatedLists = newLists.map((l, i) => ({ ...l, position: (i + 1) * 1000 }));
       setBoard(prev => ({ ...prev, lists: updatedLists }));
-      
       try {
         await reorderLists(updatedLists.map(l => ({ id: l.id, position: l.position })));
       } catch (err) {
@@ -210,62 +196,35 @@ export default function Board() {
       return;
     }
 
-    // 2. Handle Card Movement
     const cardId = draggableId.replace('card-', '');
     const sourceListId = String(source.droppableId);
     const destListId = String(destination.droppableId);
-
-    // Deep clone to ensure we aren't mutating state directly
-    const newLists = board.lists.map(l => ({
-      ...l,
-      cards: Array.from(l.cards)
-    }));
-
+    const newLists = board.lists.map(l => ({ ...l, cards: Array.from(l.cards) }));
     const sourceList = newLists.find(l => String(l.id) === sourceListId);
     const destList = newLists.find(l => String(l.id) === destListId);
 
-    if (!sourceList || !destList) {
-      console.error('Source or destination list not found in state:', { sourceListId, destListId });
-      return;
-    }
+    if (!sourceList || !destList) return;
 
-    // Find the moved card using its absolute ID to be filter-proof
     const cardIndexInSource = sourceList.cards.findIndex(c => String(c.id) === cardId);
-    if (cardIndexInSource === -1) {
-      console.error('Moved card not found in source list:', { cardId, sourceListId });
-      return;
-    }
-
     const [movedCard] = sourceList.cards.splice(cardIndexInSource, 1);
     movedCard.list_id = destList.id;
 
-    // Calculate insertion index in the full list by looking at visible cards
     const destVisibleCards = destList.cards.filter(c => 
       !filterText || c.title.toLowerCase().includes(filterText.toLowerCase())
     );
 
     let finalDestIndex;
     if (destination.index >= destVisibleCards.length) {
-      // Append after the last visible card
-      if (destVisibleCards.length === 0) {
-        finalDestIndex = destList.cards.length;
-      } else {
-        const lastVisible = destVisibleCards[destVisibleCards.length - 1];
-        finalDestIndex = destList.cards.findIndex(c => String(c.id) === String(lastVisible.id)) + 1;
-      }
+      finalDestIndex = destVisibleCards.length === 0 ? destList.cards.length : destList.cards.findIndex(c => String(c.id) === String(destVisibleCards[destVisibleCards.length - 1].id)) + 1;
     } else {
-      // Insert before the specific visible card
-      const targetVisible = destVisibleCards[destination.index];
-      finalDestIndex = destList.cards.findIndex(c => String(c.id) === String(targetVisible.id));
+      finalDestIndex = destList.cards.findIndex(c => String(c.id) === String(destVisibleCards[destination.index].id));
     }
 
     if (finalDestIndex === -1) finalDestIndex = destList.cards.length;
     destList.cards.splice(finalDestIndex, 0, movedCard);
 
-    // Optimistically update UI
     setBoard(prev => ({ ...prev, lists: newLists }));
 
-    // Prepare batch update for backend
     const cardsToUpdate = [];
     sourceList.cards.forEach((c, i) => {
       const newPos = (i + 1) * 1000;
@@ -303,10 +262,14 @@ export default function Board() {
       flexDirection: 'column',
       height: '100vh'
     }}>
+      {!user && board.visibility === 'public' && (
+        <div className="guest-banner">
+          👋 You are viewing this board as a guest. <Link to="/login" style={{color: '#fff', textDecoration: 'underline'}}>Log in</Link> to edit.
+        </div>
+      )}
       <Navbar onCreateBoard={() => setShowCreate(true)} />
 
       <div className="board-main-content" style={{ display: 'flex', flex: 1 }}>
-        {/* Side Panels - Side by Side */}
         {showInbox && (
           <div className="side-panel">
             <div className="side-panel-header">
@@ -337,270 +300,136 @@ export default function Board() {
         )}
 
         <div className="board-container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* Board Header (Premium Style) */}
           <div className="board-header">
-          <div className="board-header-left">
-            <div className="board-title">{board.title}</div>
-            <button className={`navbar-btn ${board.is_starred ? 'starred' : ''}`} onClick={toggleStar} style={{fontSize: 18}}>
-              <FiStar style={{ fill: board.is_starred ? '#F5CD47' : 'none', color: board.is_starred ? '#F5CD47' : '#fff' }} />
-            </button>
-            <div className="board-badge" ref={visibilityRef} onClick={() => setShowVisibilityPop(!showVisibilityPop)}>
-              <FiUsers /> Workspace
-              {showVisibilityPop && (
-                <div className="visibility-popover">
-                  <div style={{ textAlign: 'center', padding: '8px 0', borderBottom: '1px solid #444', marginBottom: 8 }}>Change visibility</div>
-                  <div className="visibility-option active">
-                    <FiUsers className="vis-icon" />
-                    <div className="vis-content">
-                      <h4>Workspace</h4>
-                      <p>All members of the Trello Workspace can see and edit this board.</p>
-                    </div>
-                  </div>
-                  <div className="visibility-option">
-                    <FiLock className="vis-icon" />
-                    <div className="vis-content">
-                      <h4>Private</h4>
-                      <p>Only board members can see and edit this board.</p>
-                    </div>
-                  </div>
-                  <div className="visibility-option">
-                    <FiGlobe className="vis-icon" />
-                    <div className="vis-content">
-                      <h4>Public</h4>
-                      <p>Anyone on the internet can see this board. Only board members can edit.</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="board-badge"><FiLayout /> Board</div>
-            
-            <div style={{ position: 'relative' }} ref={backgroundBtnRef}>
-              <div className="board-badge" onClick={() => setShowBackgroundPop(!showBackgroundPop)}>
-                <FiGrid /> Background
-              </div>
-              {showBackgroundPop && (
-                <div className="visibility-popover bg-popover">
-                  <div style={{ textAlign: 'center', padding: '8px 0', borderBottom: '1px solid #444', marginBottom: 12, fontWeight: 600 }}>
-                    Change Background
-                  </div>
-                  <div className="bg-grid">
-                    {backgrounds.map((bg, idx) => (
-                      <div 
-                        key={idx} 
-                        className={`bg-option ${(bg.image === board.background_image || bg.color === board.background_color) ? 'active' : ''}`}
-                        style={{ 
-                          backgroundImage: bg.image ? `url(${bg.image})` : 'none',
-                          backgroundColor: bg.color || '#333'
-                        }}
-                        onClick={() => handleBackgroundChange(bg)}
-                      >
-                        <span>{bg.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="board-header-right">
-            <div className="board-members">
-              {allMembers.slice(0, 3).map(m => (
-                <div key={m.id} className="member-avatar" style={{background: m.avatar_color}} title={m.full_name}>
-                  {m.initials}
-                </div>
-              ))}
-            </div>
-            <button className="navbar-btn btn-share" onClick={() => setShowShareModal(true)}>
-              <FiShare2 /> Share
-            </button>
-            <button className="navbar-btn"><BsLightningCharge /></button>
-            <div style={{ position: 'relative' }}>
-              <button 
-                ref={filterBtnRef}
-                className={`navbar-btn ${filterText ? 'active-filter' : ''}`} 
+            <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <h2 className="board-title">{board.title}</h2>
+              <button className={`navbar-btn ${board.is_starred ? 'starred' : ''}`} onClick={toggleStar} style={{fontSize: 18}}>
+                <FiStar style={{ fill: board.is_starred ? '#F5CD47' : 'none', color: board.is_starred ? '#F5CD47' : '#fff' }} />
+              </button>
+              <div 
+                className="board-badge" 
+                ref={visibilityRef} 
                 onClick={() => {
-                  if (!showFilterPop) {
-                    const rect = filterBtnRef.current.getBoundingClientRect();
-                    setFilterPos({ x: rect.left, y: rect.bottom + 8 });
+                  if (!isReadOnly) {
+                    const rect = visibilityRef.current.getBoundingClientRect();
+                    setVisibilityPos({ x: rect.left, y: rect.bottom + 12 });
+                    setShowVisibilityPop(!showVisibilityPop);
                   }
-                  setShowFilterPop(!showFilterPop);
                 }}
               >
-                <FiFilter /> Filter
+                {board.visibility === 'private' ? <FiLock /> : board.visibility === 'public' ? <FiGlobe /> : <FiUsers />}
+                <span style={{textTransform: 'capitalize'}}>{board.visibility || 'workspace'}</span>
+              </div>
+              <button className="navbar-btn btn-share" onClick={() => setShowShareModal(true)}>
+                <FiShare2 /> Share
               </button>
-              {showFilterPop && (
-                <div 
-                  ref={filterPopRef}
-                  className="visibility-popover filter-popover" 
-                  onClick={e => e.stopPropagation()}
-                  style={{ 
-                    position: 'fixed',
-                    top: filterPos.y, 
-                    left: filterPos.x, 
-                    margin: 0,
-                    cursor: 'default',
-                    zIndex: 4000 // Higher than everything except maybe modals
-                  }}
-                  onMouseDown={(e) => {
-                    // Clicking the top header area (top 40px) starts drag
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const relativeY = e.clientY - rect.top;
-                    if (relativeY < 40) {
-                      setIsDragging(true);
-                      setDragStart({ x: e.clientX - filterPos.x, y: e.clientY - filterPos.y });
-                    }
-                  }}
-                >
-                  <div 
-                    style={{ 
-                      textAlign: 'center', 
-                      padding: '8px 0', 
-                      borderBottom: '1px solid #444', 
-                      marginBottom: 12,
-                      cursor: 'move',
-                      userSelect: 'none',
-                      fontWeight: 600
-                    }}
-                  >
-                    Filter
+              <div className="board-badge"><FiLayout /> Board</div>
+            </div>
+            <div className="header-right" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ position: 'relative' }} ref={backgroundBtnRef}>
+                <div className="board-badge" onClick={() => setShowBackgroundPop(!showBackgroundPop)}>
+                  <FiGrid /> Background
+                </div>
+                {showBackgroundPop && (
+                  <div className="visibility-popover bg-popover">
+                    <div style={{ textAlign: 'center', padding: '8px 0', borderBottom: '1px solid #444', marginBottom: 12, fontWeight: 600 }}>Change Background</div>
+                    <div className="bg-grid">
+                      {backgrounds.map((bg, idx) => (
+                        <div key={idx} className={`bg-option ${(bg.image === board.background_image || bg.color === board.background_color) ? 'active' : ''}`} style={{ backgroundImage: bg.image ? `url(${bg.image})` : 'none', backgroundColor: bg.color || '#333' }} onClick={() => handleBackgroundChange(bg)}>
+                          <span>{bg.name}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div style={{ padding: '0 12px 12px' }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#8C9BAB', marginBottom: 4 }}>Keyword</div>
-                    <input 
-                      className="premium-input" 
-                      placeholder="Enter a keyword..." 
-                      value={filterText}
-                      onChange={e => setFilterText(e.target.value)}
-                      onMouseDown={e => e.stopPropagation()} // Prevent drag start when clicking input
-                    />
-                    {filterText && (
-                      <button className="btn btn-subtle" onClick={() => setFilterText('')} style={{width: '100%', marginTop: 8}}>Clear filter</button>
-                    )}
+                )}
+              </div>
+              <button className="navbar-btn"><BsLightningCharge /></button>
+              <div style={{ position: 'relative' }}>
+                <button ref={filterBtnRef} className={`navbar-btn ${filterText ? 'active-filter' : ''}`} onClick={() => { if (!showFilterPop) { const rect = filterBtnRef.current.getBoundingClientRect(); setFilterPos({ x: rect.left, y: rect.bottom + 8 }); } setShowFilterPop(!showFilterPop); }}>
+                  <FiFilter /> Filter
+                </button>
+                {showFilterPop && (
+                  <div ref={filterPopRef} className="visibility-popover filter-popover" onClick={e => e.stopPropagation()} style={{ position: 'fixed', top: filterPos.y, left: filterPos.x, margin: 0, cursor: 'default', zIndex: 5000 }} onMouseDown={(e) => { const rect = e.currentTarget.getBoundingClientRect(); const relativeY = e.clientY - rect.top; if (relativeY < 40) { setIsDragging(true); setDragStart({ x: e.clientX - filterPos.x, y: e.clientY - filterPos.y }); } }}>
+                    <div style={{ textAlign: 'center', padding: '8px 0', borderBottom: '1px solid #444', marginBottom: 12, cursor: 'move', userSelect: 'none', fontWeight: 600 }}>Filter</div>
+                    <div style={{ padding: '0 12px 12px' }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#8C9BAB', marginBottom: 4 }}>Keyword</div>
+                      <input className="premium-input" placeholder="Enter a keyword..." value={filterText} onChange={e => setFilterText(e.target.value)} onMouseDown={e => e.stopPropagation()} />
+                      {filterText && <button className="btn btn-subtle" onClick={() => setFilterText('')} style={{width: '100%', marginTop: 8}}>Clear filter</button>}
+                    </div>
                   </div>
+                )}
+              </div>
+              <button className="navbar-btn"><FiMoreHorizontal /></button>
+            </div>
+          </div>
+
+          <DragDropContext onDragEnd={handleDragEnd} isDragDisabled={isReadOnly}>
+            <Droppable droppableId="board" direction="horizontal" type="list">
+              {(provided) => (
+                <div className="board-content" ref={provided.innerRef} {...provided.droppableProps}>
+                  {board.lists.map((list, index) => {
+                    const filteredCards = list.cards.filter(c => !filterText || c.title.toLowerCase().includes(filterText.toLowerCase()));
+                    return (
+                      <List key={list.id} list={{ ...list, cards: filteredCards }} index={index} isReadOnly={isReadOnly} onOpenCard={(id) => { setActiveCardId(id); setSearchParams({ card: id }); }} onUpdateList={async (id, data) => { await updateList(id, data); fetchBoard(); }} onDeleteList={async (id) => { await deleteList(id); fetchBoard(); }} />
+                    );
+                  })}
+                  {provided.placeholder}
+                  {!isReadOnly && <AddList onAdd={async (title) => { await createList({ board_id: parseInt(id), title }); fetchBoard(); }} />}
                 </div>
               )}
-            </div>
-            <button className="navbar-btn"><FiMoreHorizontal /></button>
-          </div>
+            </Droppable>
+          </DragDropContext>
         </div>
-
-        {/* Board Canvas */}
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="board" direction="horizontal" type="list">
-            {(provided) => (
-              <div className="board-content" ref={provided.innerRef} {...provided.droppableProps}>
-                {board.lists.map((list, index) => {
-                  const filteredCards = list.cards.filter(c => 
-                    !filterText || c.title.toLowerCase().includes(filterText.toLowerCase())
-                  );
-                  return (
-                    <List
-                      key={list.id}
-                      list={{ ...list, cards: filteredCards }}
-                      index={index}
-                      onOpenCard={(id) => { setActiveCardId(id); setSearchParams({ card: id }); }}
-                      onUpdateList={async (id, data) => {
-                        await updateList(id, data);
-                        fetchBoard();
-                      }}
-                      onDeleteList={async (id) => {
-                        await deleteList(id);
-                        fetchBoard();
-                      }}
-                    />
-                  );
-                })}
-                {provided.placeholder}
-                <AddList onAdd={async (title) => {
-                  await createList({ board_id: parseInt(id), title });
-                  fetchBoard();
-                }} />
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
       </div>
-    </div>
 
-      {/* Bottom Nav (Independent Toggles) */}
       <div className="bottom-nav">
-        <div className={`bottom-nav-item ${showInbox ? 'active' : ''}`} onClick={() => setShowInbox(!showInbox)}>
-          <FiInbox /> Inbox
-        </div>
+        <div className={`bottom-nav-item ${showInbox ? 'active' : ''}`} onClick={() => setShowInbox(!showInbox)}><FiInbox /> Inbox</div>
         <div className="bottom-nav-divider"></div>
-        <div className={`bottom-nav-item ${showPlanner ? 'active' : ''}`} onClick={() => setShowPlanner(!showPlanner)}>
-          <FiCalendar /> Planner
-        </div>
+        <div className={`bottom-nav-item ${showPlanner ? 'active' : ''}`} onClick={() => setShowPlanner(!showPlanner)}><FiCalendar /> Planner</div>
         <div className="bottom-nav-divider"></div>
-        <div className={`bottom-nav-item ${!showInbox && !showPlanner ? 'active' : ''}`} onClick={() => { setShowInbox(false); setShowPlanner(false); }}>
-          <FiGrid /> Board
-        </div>
+        <div className={`bottom-nav-item ${!showInbox && !showPlanner ? 'active' : ''}`} onClick={() => { setShowInbox(false); setShowPlanner(false); }}><FiGrid /> Board</div>
         <div className="bottom-nav-divider"></div>
-        <div className="bottom-nav-item" onClick={() => navigate('/')}>
-          <FiLayout /> Switch boards
-        </div>
+        <div className="bottom-nav-item" onClick={() => navigate('/')}><FiLayout /> Switch boards</div>
       </div>
 
-      {/* Share Modal Overlay */}
       {showShareModal && (
-        <div className="modal-overlay" onClick={() => setShowShareModal(false)}>
-          <div className="premium-modal" onClick={e => e.stopPropagation()}>
-            <div className="premium-modal-header">
-              <h2 style={{fontSize: 20}}>Share board</h2>
-              <FiX onClick={() => setShowShareModal(false)} cursor="pointer" />
-            </div>
-            <div className="share-input-group">
-              <div className="share-input-wrapper">
-                <input 
-                  className="premium-input" 
-                  placeholder="Email address or name" 
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                />
-                <button className="btn btn-primary" onClick={handleBoardInvite}>Share</button>
-              </div>
-                <div className="share-link-row">
-                  <FiPaperclip />
-                  <div style={{flex: 1}}>
-                    <div style={{fontWeight: 600, fontSize: 13}}>Share this board with a link</div>
-                    <div 
-                      style={{fontSize: 12, color: '#579DFF', cursor: 'pointer', textDecoration: 'underline'}}
-                      onClick={handleCreateLink}
-                    >
-                      Create link
-                    </div>
-                  </div>
-                </div>
-              <div style={{marginTop: 24}}>
-                <div style={{fontSize: 12, fontWeight: 700, textTransform: 'uppercase', marginBottom: 8}}>Board members ({allMembers.length})</div>
-                {allMembers.map(m => (
-                  <div key={m.id} className="member-list-item">
-                    <div className="member-info">
-                      <div className="member-avatar" style={{background: m.avatar_color, width: 32, height: 32}}>{m.initials}</div>
-                      <div>
-                        <div style={{fontWeight: 600, fontSize: 13}}>{m.full_name} ({m.username})</div>
-                        <div style={{fontSize: 12, color: '#8C9BAB'}}>@{m.username} • Workspace member</div>
-                      </div>
-                    </div>
-                    <div style={{fontSize: 12, color: '#8C9BAB'}}>Member</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <ShareModal 
+          board={board} 
+          onClose={() => setShowShareModal(false)} 
+          onVisibilityChange={handleVisibilityChange}
+        />
+      )}
+
+      {!isReadOnly && showVisibilityPop && (
+        <div 
+          className="visibility-popover" 
+          onClick={e => e.stopPropagation()}
+          style={{ 
+            position: 'fixed', 
+            top: visibilityPos.y, 
+            left: visibilityPos.x,
+            margin: 0,
+            zIndex: 99999 // Ultimate priority
+          }}
+        >
+          <div style={{ textAlign: 'center', padding: '8px 0', borderBottom: '1px solid #444', marginBottom: 12, fontWeight: 600 }}>Change visibility</div>
+          <div className={`visibility-option ${board.visibility === 'workspace' || !board.visibility ? 'active' : ''}`} onClick={() => handleVisibilityChange('workspace')}>
+            <FiUsers className="vis-icon" />
+            <div className="vis-content"><h4>Workspace</h4><p>All members can see and edit this board.</p></div>
+          </div>
+          <div className={`visibility-option ${board.visibility === 'private' ? 'active' : ''}`} onClick={() => handleVisibilityChange('private')}>
+            <FiLock className="vis-icon" />
+            <div className="vis-content"><h4>Private</h4><p>Only board members can see and edit.</p></div>
+          </div>
+          <div className={`visibility-option ${board.visibility === 'public' ? 'active' : ''}`} onClick={() => handleVisibilityChange('public')}>
+            <FiGlobe className="vis-icon" />
+            <div className="vis-content"><h4>Public</h4><p>Anyone on the internet can see this board.</p></div>
           </div>
         </div>
       )}
-
+      
       {activeCardId && (
-        <CardDetailModal
-          cardId={activeCardId}
-          boardLabels={board.labels || []}
-          boardMembers={allMembers}
-          onClose={() => { setActiveCardId(null); setSearchParams({}); }}
-          onUpdate={fetchBoard}
-        />
+        <CardDetailModal cardId={activeCardId} boardLabels={board.labels || []} boardMembers={allMembers} isReadOnly={isReadOnly} onClose={() => { setActiveCardId(null); setSearchParams({}); }} onUpdate={fetchBoard} />
       )}
       {showToast && (
         <div className="premium-toast manual-toast">
@@ -609,13 +438,7 @@ export default function Board() {
         </div>
       )}
       {showCreate && (
-        <CreateBoardModal
-          onClose={() => setShowCreate(false)}
-          onCreated={(board) => {
-            setShowCreate(false);
-            navigate(`/board/${board.id}`);
-          }}
-        />
+        <CreateBoardModal onClose={() => setShowCreate(false)} onCreated={(newBoard) => { setShowCreate(false); navigate(`/board/${newBoard.id}`); }} />
       )}
     </div>
   );

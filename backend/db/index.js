@@ -3,11 +3,11 @@ const fs = require('fs');
 const path = require('path');
 
 // Create a connection pool using DATABASE_URL from .env
+const isLocal = process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('localhost') || process.env.DATABASE_URL.includes('127.0.0.1'));
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: isLocal ? false : { rejectUnauthorized: false }
 });
 
 // Helper: run a query (returns { rows, rowCount })
@@ -21,6 +21,7 @@ async function initializeDatabase() {
     await client.query(schemaSQL);
     await client.query('ALTER TABLE members ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255)');
     await client.query('ALTER TABLE members ADD COLUMN IF NOT EXISTS bio TEXT');
+    await client.query("ALTER TABLE boards ADD COLUMN IF NOT EXISTS visibility VARCHAR(20) DEFAULT 'workspace'");
     console.log('✅ Database schema initialized');
 
     // Check if data exists

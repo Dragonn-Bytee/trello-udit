@@ -129,14 +129,15 @@ router.put('/:id', async (req, res) => {
     if (boardResult.rows.length === 0) return res.status(404).json({ error: 'Board not found' });
     const board = boardResult.rows[0];
 
-    const { title, background_color, background_image, is_starred } = req.body;
+    const { title, background_color, background_image, is_starred, visibility } = req.body;
 
     const updatedResult = await query(
-      `UPDATE boards SET title = $1, background_color = $2, background_image = $3, is_starred = $4, updated_at = NOW() WHERE id = $5 RETURNING *`,
+      `UPDATE boards SET title = $1, background_color = $2, background_image = $3, visibility = $4, is_starred = $5, updated_at = NOW() WHERE id = $6 RETURNING *`,
       [
         title !== undefined ? title : board.title,
         background_color !== undefined ? background_color : board.background_color,
         background_image !== undefined ? background_image : board.background_image,
+        visibility !== undefined ? visibility : board.visibility,
         is_starred !== undefined ? is_starred : board.is_starred,
         id
       ]

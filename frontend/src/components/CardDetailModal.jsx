@@ -13,7 +13,7 @@ import {
   addComment, deleteComment
 } from '../api';
 
-export default function CardDetailModal({ cardId, boardLabels, boardMembers, onClose, onUpdate }) {
+export default function CardDetailModal({ cardId, boardLabels, boardMembers, onClose, onUpdate, isReadOnly }) {
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingDesc, setEditingDesc] = useState(false);
@@ -306,8 +306,9 @@ export default function CardDetailModal({ cardId, boardLabels, boardMembers, onC
           <textarea
             className="card-modal-title"
             value={card.title}
-            onChange={(e) => setCard((prev) => ({ ...prev, title: e.target.value }))}
-            onBlur={(e) => handleTitleChange(e.target.value)}
+            readOnly={isReadOnly}
+            onChange={(e) => !isReadOnly && setCard((prev) => ({ ...prev, title: e.target.value }))}
+            onBlur={(e) => !isReadOnly && handleTitleChange(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } }}
             rows={1}
           />
@@ -358,6 +359,7 @@ export default function CardDetailModal({ cardId, boardLabels, boardMembers, onC
                   <div className="due-date-badge">
                     <input
                       type="checkbox"
+                      disabled={isReadOnly}
                       checked={card.due_complete || false}
                       onChange={handleToggleDueComplete}
                     />
@@ -377,7 +379,7 @@ export default function CardDetailModal({ cardId, boardLabels, boardMembers, onC
               <div className="card-section-header">
                 <FiAlignLeft className="card-section-header-icon" />
                 <h3>Description</h3>
-                {card.description && !editingDesc && (
+                {!isReadOnly && card.description && !editingDesc && (
                   <button className="btn btn-subtle" onClick={() => setEditingDesc(true)} style={{ marginLeft: 'auto' }}>
                     Edit
                   </button>
@@ -401,7 +403,7 @@ export default function CardDetailModal({ cardId, boardLabels, boardMembers, onC
                 ) : (
                   <div
                     className="description-placeholder"
-                    onClick={() => setEditingDesc(true)}
+                    onClick={() => !isReadOnly && setEditingDesc(true)}
                     style={card.description ? { background: 'transparent', padding: 0, whiteSpace: 'pre-wrap' } : {}}
                   >
                     {card.description || 'Add a more detailed description...'}
@@ -553,35 +555,39 @@ export default function CardDetailModal({ cardId, boardLabels, boardMembers, onC
 
           {/* Sidebar */}
           <div className="card-modal-sidebar">
-            <div className="sidebar-section">
-              <div className="sidebar-section-title">Add to card</div>
+            {!isReadOnly && (
+              <div className="sidebar-section">
+                <div className="sidebar-section-title">Add to card</div>
 
-              <button className="sidebar-btn" onClick={() => setActivePopover(activePopover === 'members' ? null : 'members')}>
-                <FiUser /> Members
-              </button>
+                <button className="sidebar-btn" onClick={() => setActivePopover(activePopover === 'members' ? null : 'members')}>
+                  <FiUser /> Members
+                </button>
 
-              <button className="sidebar-btn" onClick={() => setActivePopover(activePopover === 'labels' ? null : 'labels')}>
-                <FiTag /> Labels
-              </button>
+                <button className="sidebar-btn" onClick={() => setActivePopover(activePopover === 'labels' ? null : 'labels')}>
+                  <FiTag /> Labels
+                </button>
 
-              <button className="sidebar-btn" onClick={() => setActivePopover(activePopover === 'checklist' ? null : 'checklist')}>
-                <FiCheckSquare /> Checklist
-              </button>
+                <button className="sidebar-btn" onClick={() => setActivePopover(activePopover === 'checklist' ? null : 'checklist')}>
+                  <FiCheckSquare /> Checklist
+                </button>
 
-              <button className="sidebar-btn" onClick={() => setActivePopover(activePopover === 'date' ? null : 'date')}>
-                <FiClock /> Dates
-              </button>
-            </div>
+                <button className="sidebar-btn" onClick={() => setActivePopover(activePopover === 'date' ? null : 'date')}>
+                  <FiClock /> Dates
+                </button>
+              </div>
+            )}
 
-            <div className="sidebar-section">
-              <div className="sidebar-section-title">Actions</div>
-              <button className="sidebar-btn" onClick={handleArchive}>
-                <FiArchive /> Archive
-              </button>
-              <button className="sidebar-btn" onClick={handleDelete} style={{ color: '#EB5A46' }}>
-                <FiTrash2 /> Delete
-              </button>
-            </div>
+            {!isReadOnly && (
+              <div className="sidebar-section">
+                <div className="sidebar-section-title">Actions</div>
+                <button className="sidebar-btn" onClick={handleArchive}>
+                  <FiArchive /> Archive
+                </button>
+                <button className="sidebar-btn" onClick={handleDelete} style={{ color: '#EB5A46' }}>
+                  <FiTrash2 /> Delete
+                </button>
+              </div>
+            )}
 
             {/* Popovers */}
             {activePopover === 'labels' && (

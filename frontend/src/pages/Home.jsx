@@ -43,25 +43,24 @@ export default function Home() {
     <div className="main-wrapper" style={{ background: '#1D2125' }}>
       <Navbar onCreateBoard={() => setShowCreate(true)} />
 
-      <div className="home-content" style={{width: '100%', maxWidth: 1200, margin: '0 auto', padding: '40px 16px', overflowY: 'auto'}}>
+      <div className="home-container">
         {starredBoards.length > 0 && (
           <div className="home-section">
-            <div className="home-section-header" style={{color: '#B6C2CF', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, fontSize: 16, fontWeight: 700}}>
-              <FiStar /> Starred boards
-            </div>
-            <div className="boards-grid" style={{display: 'flex', gap: 16, flexWrap: 'wrap'}}>
+            <div className="home-section-header"><FiStar /> Starred boards</div>
+            <div className="boards-grid">
               {starredBoards.map((board) => (
                 <Link
                   to={`/board/${board.id}`}
                   key={board.id}
                   className="board-tile"
-                  style={{ background: board.background_color, width: 200, height: 96, borderRadius: 3, padding: 12, color: '#fff', fontWeight: 700, textDecoration: 'none', position: 'relative' }}
+                  style={{ background: board.background_color, backgroundImage: board.background_image ? `url(${board.background_image})` : 'none' }}
                 >
+                  <div className="board-tile-overlay" />
                   <span className="board-tile-title">{board.title}</span>
                   <span
                     className={`board-tile-star ${board.is_starred ? 'starred' : ''}`}
                     onClick={(e) => toggleStar(e, board)}
-                    style={{position: 'absolute', bottom: 8, right: 8, color: '#F5CD47'}}
+                    style={{position: 'absolute', bottom: 8, right: 8, color: '#F5CD47', zIndex: 3}}
                   >
                     ★
                   </span>
@@ -71,33 +70,28 @@ export default function Home() {
           </div>
         )}
 
-        <div className="home-section" style={{marginTop: 40}}>
-          <div className="home-section-header" style={{color: '#B6C2CF', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, fontSize: 16, fontWeight: 700}}>
-            <FiClock /> Recently viewed
-          </div>
-          <div className="boards-grid" style={{display: 'flex', gap: 16, flexWrap: 'wrap'}}>
+        <div className="home-section">
+          <div className="home-section-header"><FiClock /> Recently viewed</div>
+          <div className="boards-grid">
             {recentBoards.map((board) => (
               <Link
                 to={`/board/${board.id}`}
                 key={board.id}
                 className="board-tile"
-                style={{ background: board.background_color, width: 200, height: 96, borderRadius: 3, padding: 12, color: '#fff', fontWeight: 700, textDecoration: 'none', position: 'relative' }}
+                style={{ background: board.background_color, backgroundImage: board.background_image ? `url(${board.background_image})` : 'none' }}
               >
+                <div className="board-tile-overlay" />
                 <span className="board-tile-title">{board.title}</span>
                 <span
                   className={`board-tile-star ${board.is_starred ? 'starred' : ''}`}
                   onClick={(e) => toggleStar(e, board)}
-                  style={{position: 'absolute', bottom: 8, right: 8, color: board.is_starred ? '#F5CD47' : '#fff', opacity: board.is_starred ? 1 : 0.5}}
+                  style={{position: 'absolute', bottom: 8, right: 8, color: board.is_starred ? '#F5CD47' : '#fff', opacity: board.is_starred ? 1 : 0.5, zIndex: 3}}
                 >
                   ★
                 </span>
               </Link>
             ))}
-            <div
-              className="board-tile create-board-tile"
-              onClick={() => setShowCreate(true)}
-              style={{ background: 'rgba(255,255,255,0.05)', width: 200, height: 96, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B6C2CF', cursor: 'pointer' }}
-            >
+            <div className="board-tile create-board-tile" onClick={() => setShowCreate(true)}>
               Create new board
             </div>
           </div>
