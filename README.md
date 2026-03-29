@@ -2,6 +2,8 @@
 
 A professional, feature-rich Kanban-style project management application designed to organize tasks, streamline workflows, and enhance team collaboration. Built with a robust full-stack architecture focusing on real-time interactions and premium aesthetics.
 
+### 🌐 [Live Demo](https://trello-udit.vercel.app/)
+
 ---
 
 ## 🛠️ Tech Stack
@@ -75,11 +77,10 @@ Visit `http://localhost:5173` to start managing your projects!
 
 ## 📖 Usage Instructions
 
-1. **Create an Account:** Sign up or log in to get started.
-2. **Setup Boards:** Create a new board and choose a premium background.
-3. **Manage Lists:** Add columns like "To Do", "In Progress", and "Done".
-4. **Organize Cards:** Add cards, set labels, add checklists, and drag them between lists.
-5. **Real-time Filter:** Use the search bar in the navbar to instantly filter cards on your board by title.
+1. **Setup Boards:** Create a new board and choose a premium background.
+2. **Manage Lists:** Add columns like "To Do", "In Progress", and "Done".
+3. **Organize Cards:** Add cards, set labels, add checklists, and drag them between lists.
+4. **Real-time Filter:** Use the search bar in the navbar to instantly filter cards on your board by title.
 
 ---
 
