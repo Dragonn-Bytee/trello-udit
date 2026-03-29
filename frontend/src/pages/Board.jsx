@@ -260,7 +260,12 @@ export default function Board() {
   return (
     <div className="main-wrapper" style={{ 
       backgroundColor: board.background_color || '#101204',
-      backgroundImage: board.background_image ? `url(${board.background_image})` : 'none'
+      backgroundImage: board.background_image ? `url(${board.background_image})` : 'none',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh',
+      minHeight: '100vh',
+      transition: 'background 0.5s ease'
     }}>
       {!user && board.visibility === 'public' && (
         <div className="guest-banner">
