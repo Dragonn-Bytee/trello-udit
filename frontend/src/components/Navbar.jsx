@@ -113,10 +113,10 @@ export default function Navbar({ onCreateBoard }) {
               <div style={{ padding: '8px 4px', borderBottom: '1px solid #444', marginBottom: 8 }}>
                 <div style={{ fontSize: 12, color: '#8C9BAB', marginBottom: 4 }}>ACCOUNT</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div className="member-avatar" style={{ background: user?.avatar_color }}>{user?.initials}</div>
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{user?.full_name}</div>
-                    <div style={{ fontSize: 12, color: '#8C9BAB' }}>{user?.email}</div>
+                  <div className="member-avatar" style={{ background: user?.avatar_color, flexShrink: 0 }}>{user?.initials}</div>
+                  <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                    <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.full_name}</div>
+                    <div style={{ fontSize: 12, color: '#8C9BAB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
                   </div>
                 </div>
               </div>
