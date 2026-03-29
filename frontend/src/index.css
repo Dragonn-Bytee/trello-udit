@@ -1421,6 +1421,25 @@ body {
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 
+.main-wrapper {
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  transition: background 0.3s ease;
+}
+
+.guest-banner {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  padding: 8px 16px;
+  text-align: center;
+  color: #fff;
+  border-bottom: 1px solid var(--glass-border);
+  font-size: 13px;
+  z-index: 10002;
+}
+
 /* Modal Overlay & Base Styles */
 .modal-overlay {
   position: fixed;

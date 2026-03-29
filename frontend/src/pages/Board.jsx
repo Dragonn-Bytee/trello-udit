@@ -107,11 +107,13 @@ export default function Board() {
   ];
 
   const handleBackgroundChange = async (bg) => {
+    console.log('Changing background to:', bg);
     try {
       const updateData = bg.image 
         ? { background_image: bg.image, background_color: null }
         : { background_color: bg.color, background_image: null };
       
+      console.log('Sending update to API:', updateData);
       await updateBoard(id, updateData);
       setBoard(prev => ({ ...prev, ...updateData }));
     } catch (err) {
@@ -257,11 +259,8 @@ export default function Board() {
 
   return (
     <div className="main-wrapper" style={{ 
-      backgroundColor: board.background_color || 'transparent',
-      backgroundImage: board.background_image ? `url(${board.background_image})` : (board.background_color ? 'none' : 'url(/backgrounds/purple.png)'),
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh'
+      backgroundColor: board.background_color || '#101204',
+      backgroundImage: board.background_image ? `url(${board.background_image})` : 'none'
     }}>
       {!user && board.visibility === 'public' && (
         <div className="guest-banner">
