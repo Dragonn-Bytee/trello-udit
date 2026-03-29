@@ -12,6 +12,7 @@ import Navbar from '../components/Navbar';
 import List from '../components/List';
 import AddList from '../components/AddList';
 import CardDetailModal from '../components/CardDetailModal';
+import CreateBoardModal from '../components/CreateBoardModal';
 import {
   getBoard, updateBoard, createList, updateList, deleteList,
   reorderLists, createCard, reorderCards, getMembers, deleteCard,
@@ -42,6 +43,7 @@ export default function Board() {
   const [toastMsg, setToastMsg] = useState('');
   const [showVisibilityPop, setShowVisibilityPop] = useState(false);
   const [showBackgroundPop, setShowBackgroundPop] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   
   const visibilityRef = useRef(null);
   const backgroundBtnRef = useRef(null);
@@ -301,7 +303,7 @@ export default function Board() {
       flexDirection: 'column',
       height: '100vh'
     }}>
-      <Navbar />
+      <Navbar onCreateBoard={() => setShowCreate(true)} />
 
       <div className="board-main-content" style={{ display: 'flex', flex: 1 }}>
         {/* Side Panels - Side by Side */}
@@ -605,6 +607,15 @@ export default function Board() {
           <span>{toastMsg}</span>
           <button className="btn btn-primary btn-sm" onClick={() => setShowToast(false)}>OK</button>
         </div>
+      )}
+      {showCreate && (
+        <CreateBoardModal
+          onClose={() => setShowCreate(false)}
+          onCreated={(board) => {
+            setShowCreate(false);
+            navigate(`/board/${board.id}`);
+          }}
+        />
       )}
     </div>
   );
