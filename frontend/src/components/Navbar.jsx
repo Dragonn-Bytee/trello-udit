@@ -82,8 +82,8 @@ export default function Navbar({ onCreateBoard }) {
                   navigate(`/board/${card.board_id}?card=${card.id}`);
                 }}
               >
-                <div style={{fontWeight: 600}}>{card.title}</div>
-                <div style={{fontSize: 12, color: '#8C9BAB'}}>in {card.list_title} • {card.board_title}</div>
+                <div style={{fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{card.title}</div>
+                <div style={{fontSize: 12, color: '#8C9BAB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>in {card.list_title} • {card.board_title}</div>
               </div>
             ))}
           </div>
